@@ -26,7 +26,8 @@ def test_get_split_impurity():
 def test_find_best_split_for_feature():
     feature_values = np.array([0, 1, 4, 6, 8, 8, 10])
     labels = np.array([0, 0, 0, 1, 1, 1, 1])
-    best_threshold, best_impurity = find_best_split_for_feature(feature_values, labels, n_classes=2)
+    best_threshold, best_impurity = find_best_split_for_feature(
+        feature_values, labels, n_classes=2, impurity_function=gini_impurity)
     assert best_threshold == 4
     assert best_impurity == 0.0
 
