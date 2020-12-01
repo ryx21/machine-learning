@@ -1,5 +1,9 @@
 from models.helpers import *
 
+# TODO: implement min_samples_leaf
+# TODO: implement alternative splitting functions
+# TODO: implement regression tree
+
 
 class CART:
 
