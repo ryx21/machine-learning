@@ -2,6 +2,7 @@
 
 My implementations of machine learning algorithms.
 * CART (Classification and Regression Tree) Algorithm
+* Random Forest classifier
 
 ### Project Setup
 1. Setup python path
