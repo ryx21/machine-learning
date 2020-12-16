@@ -15,6 +15,21 @@ def gini_impurity(data_labels, n_classes):
     return result
 
 
+def entropy_impurity(data_labels, n_classes):
+    eps = 1e-10
+    label_probabilities = get_label_probabilities(data_labels, n_classes)
+    # ensure we don't take logs of 0s
+    label_probabilities[label_probabilities < eps] = eps
+    result = -np.dot(label_probabilities, np.log2(label_probabilities))
+    return result
+
+
+def misclassification_impurity(data_labels, n_classes):
+    label_probabilities = get_label_probabilities(data_labels, n_classes)
+    result = 1 - np.max(label_probabilities, axis=-1)
+    return result
+
+
 def get_split_impurity(left_labels, right_labels, n_classes, impurity_function):
     sample_size = len(left_labels) + len(right_labels)
     left_split_impurity = impurity_function(left_labels, n_classes)

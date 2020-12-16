@@ -2,6 +2,7 @@
 
 My implementations of machine learning algorithms.
 * CART (Classification and Regression Tree) Algorithm
+* Random Forest classifier
 
 ### Project Setup
 1. Setup python path
@@ -22,9 +23,13 @@ Optional parameters:
 * `max_feature_ratio`
 
 Supported splitting functions:
-* `gini_impurity`
+* `gini`
+* `entropy`
+* `misclassification`
 
 #### Random Forest Classifier
 Builds an ensemble of CART classifiers with random feature selection and random sample selection, currently only using a single CPU process. Optional Parameters (includes also CART parameters):
 * `num_trees`
 * `max_sample_ratio`
+
+Call `fit(data, labels, n_jobs)` function to fit model to train model. `n_jobs` can be used to set number of multiprocessing jobs, (`n_jobs = -1` uses all available cores). By default `n_jobs=1` which uses a single process.g

@@ -14,6 +14,16 @@ def test_gini_impurity():
     assert result == 0.65625
 
 
+def _test_entropy_impurity():
+    # TODO: write test
+    pass
+
+
+def _test_misclassification_impurity():
+    # TODO: write test
+    pass
+
+
 def test_get_split_impurity():
     left_labels = np.array([0, 0, 0, 1, 1, 1, 2, 2])
     right_labels = np.array([1, 3, 3, 3])

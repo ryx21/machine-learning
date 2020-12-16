@@ -1,10 +1,8 @@
 import numpy as np
 import math
 import time
+from pathos import multiprocessing
 from models.cart import CART
-
-# TODO: add multiprocessing fit() option
-# TODO: write test cases
 
 
 class RandomForestClassifier:
@@ -18,7 +16,7 @@ class RandomForestClassifier:
                  max_feature_ratio=1,
                  num_trees=100,
                  max_sample_ratio=1,
-                 verbose=True
+                 verbose=True,
                  ):
         # RandomForest info
         self._n_classes = n_classes
@@ -59,11 +57,17 @@ class RandomForestClassifier:
                 print(f'--- No. base learners trained: {i + 1} ---')
 
     def _build_ensemble_multi_process(self, data, labels, n_jobs):
-        raise NotImplementedError
+        # build random forest with multiprocessing
+        def single_job(i): return self._build_base_learner(data, labels)
+        # use maximum number of CPU cores
+        if n_jobs == -1:
+            n_jobs = multiprocessing.cpu_count()
+        with multiprocessing.Pool(n_jobs) as p:
+            self._base_learner_ensemble = p.map(single_job, range(self._num_trees))
 
     def fit(self, data, labels, n_jobs=1):
         start_time = time.time()
-        if n_jobs > 1:
+        if n_jobs != 1:
             self._build_ensemble_multi_process(data, labels, n_jobs)
         else:
             self._build_ensemble_single_process(data, labels)
@@ -71,6 +75,7 @@ class RandomForestClassifier:
             print(f'--- Completed training in {round(time.time() - start_time, 3)} seconds ---')
 
     def predict_sample_probability(self, x):
+        # predict probability of each class for a single sample
         ensemble_votes = np.zeros(self._n_classes)
         for base in self._base_learner_ensemble:
             ensemble_votes[base.predict_sample(x)] += 1
@@ -82,7 +87,7 @@ class RandomForestClassifier:
         result = np.array([self.predict_sample_probability(x) for x in data])
         return result
 
-    def predict(self, x):
-        result = self.predict_probability(x)
+    def predict(self, data):
+        result = self.predict_probability(data)
         result = np.argmax(result, axis=1)
         return result
