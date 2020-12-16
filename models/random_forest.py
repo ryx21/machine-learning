@@ -4,9 +4,6 @@ import time
 from pathos import multiprocessing
 from models.cart import CART
 
-# TODO: add multiprocessing fit() option
-# TODO: write test cases
-
 
 class RandomForestClassifier:
 
