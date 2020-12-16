@@ -1,4 +1,5 @@
 import numpy as np
+import math
 from models.helpers import find_best_split_for_feature, get_label_probabilities, gini_impurity
 
 # TODO: implement min_samples_leaf
@@ -10,7 +11,7 @@ class CART:
 
     def __init__(self,
                  n_classes,
-                 depth=0,
+                 depth=1,
                  max_depth=np.infty,
                  min_samples_leaf=1,
                  min_samples_split=2,
@@ -54,21 +55,28 @@ class CART:
         elif impurity_function == "misclassification":
             raise NotImplementedError
 
+    def _sample_features(self, num_features):
+        num_sampled_features = math.ceil(num_features * self._max_feature_ratio)
+        sampled_features = np.random.choice(list(range(num_features)), size=num_sampled_features, replace=False)
+        return np.sort(sampled_features)
+
     def _find_optimum_split(self, data, labels):
         # data (#samples, #features), labels (#samples)
+        # randomly sample features
+        sampled_features = self._sample_features(num_features=data.shape[1])
         # find best feature to split on by impurity
-        for i in range(data.shape[1]):
-            feature_values = data[:, i]
+        for feature, i in enumerate(sampled_features):
+            feature_values = data[:, feature]
             feature_threshold, feature_impurity = find_best_split_for_feature(
                 feature_values, labels, self._n_classes, self._impurity_function)
             if i == 0:
                 best_feature_threshold = feature_threshold
                 best_feature_impurity = feature_impurity
-                best_feature_index = i
+                best_feature_index = feature
             elif feature_impurity < best_feature_impurity:
                 best_feature_threshold = feature_threshold
                 best_feature_impurity = feature_impurity
-                best_feature_index = i
+                best_feature_index = feature
         # update node with feature threshold and feature index
         self._feature_threshold = best_feature_threshold
         self._feature_index = best_feature_index
@@ -85,8 +93,7 @@ class CART:
             self._min_samples_leaf,
             self._min_samples_split,
             self._split_criterion,
-            self._max_feature_ratio
-        )
+            self._max_feature_ratio)
         return child_node
 
     def _stop_condition(self, data, labels):
