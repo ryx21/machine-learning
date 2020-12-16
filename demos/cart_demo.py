@@ -1,15 +1,18 @@
-from sklearn.datasets import make_blobs
+from sklearn import datasets
 from sklearn.metrics import accuracy_score
 from models.cart import CART
 
 if __name__ == "__main__":
 
-    n_samples = 500
-    n_classes = 5
-    n_features = 5
+    iris = datasets.load_iris()
+
+    X = iris.data
+    y = iris.target
+    n_samples = len(X)
+    n_classes = 3
+
     split = int(0.7 * n_samples)
 
-    X, y = make_blobs(n_samples=n_samples, centers=n_classes, n_features=n_features, random_state=0)
     X_train, X_test = X[:split], X[split:]
     y_train, y_test = y[:split], y[split:]
 
@@ -19,5 +22,6 @@ if __name__ == "__main__":
     y_train_predict = CART_model.predict(X_train)
     y_test_predict = CART_model.predict(X_test)
 
+    print('--- CART Classifier ---')
     print("Train Accuracy:", accuracy_score(y_train, y_train_predict))
     print("Test Accuracy:", accuracy_score(y_test, y_test_predict))
