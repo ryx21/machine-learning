@@ -23,7 +23,8 @@ if __name__ == "__main__":
         min_samples_leaf=5,
         max_depth=10,
         num_trees=200,
-        max_sample_ratio=0.5
+        max_sample_ratio=0.5,
+        split_criterion="gini"
     )
     RF_model.fit(X_train, y_train, n_jobs=-1)
 

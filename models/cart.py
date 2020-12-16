@@ -1,10 +1,11 @@
 import numpy as np
 import math
-from models.helpers import find_best_split_for_feature, get_label_probabilities, gini_impurity
+from models.helpers import find_best_split_for_feature, get_label_probabilities,\
+    gini_impurity, entropy_impurity, misclassification_impurity
 
 # TODO: implement min_samples_leaf
-# TODO: implement alternative splitting functions
 # TODO: implement regression tree
+# TODO: write tests for alternate splitting functions
 
 
 class CART:
@@ -52,9 +53,9 @@ class CART:
         if impurity_function == "gini":
             return gini_impurity
         elif impurity_function == "entropy":
-            raise NotImplementedError
+            return entropy_impurity
         elif impurity_function == "misclassification":
-            raise NotImplementedError
+            return misclassification_impurity
 
     def _sample_features(self, num_features):
         # get number of sampled features
