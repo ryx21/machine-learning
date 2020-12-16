@@ -62,6 +62,7 @@ class RandomForestClassifier:
     def _build_ensemble_multi_process(self, data, labels, n_jobs):
         # build random forest with multiprocessing
         def single_job(i): return self._build_base_learner(data, labels)
+        # use maximum number of CPU cores
         if n_jobs == -1:
             n_jobs = multiprocessing.cpu_count()
         with multiprocessing.Pool(n_jobs) as p:
@@ -77,6 +78,7 @@ class RandomForestClassifier:
             print(f'--- Completed training in {round(time.time() - start_time, 3)} seconds ---')
 
     def predict_sample_probability(self, x):
+        # predict probability of each class for a single sample
         ensemble_votes = np.zeros(self._n_classes)
         for base in self._base_learner_ensemble:
             ensemble_votes[base.predict_sample(x)] += 1
@@ -88,7 +90,7 @@ class RandomForestClassifier:
         result = np.array([self.predict_sample_probability(x) for x in data])
         return result
 
-    def predict(self, x):
-        result = self.predict_probability(x)
+    def predict(self, data):
+        result = self.predict_probability(data)
         result = np.argmax(result, axis=1)
         return result

@@ -137,10 +137,10 @@ class CART:
         else:
             return self._leaf_class
 
-    def predict(self, x):
+    def predict(self, data):
         predictions = []
-        for i in range(len(x)):
-            prediction = self.predict_sample(x[i])
+        for i in range(len(data)):
+            prediction = self.predict_sample(data[i])
             predictions.append(prediction)
         result = np.array(predictions)
         return result
