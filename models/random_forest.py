@@ -18,7 +18,7 @@ class RandomForestClassifier:
                  max_feature_ratio=1,
                  num_trees=100,
                  max_sample_ratio=1,
-                 verbose=True
+                 verbose=True,
                  ):
         # RandomForest info
         self._n_classes = n_classes

@@ -47,7 +47,8 @@ class CART:
         assert self._split_criterion in ['gini', 'entropy', 'misclassification'],\
             "'split_criterion' must be one of: gini, entropy, misclassification'"
 
-    def _get_impurity_function(self, impurity_function):
+    @staticmethod
+    def _get_impurity_function(impurity_function):
         if impurity_function == "gini":
             return gini_impurity
         elif impurity_function == "entropy":
@@ -56,6 +57,7 @@ class CART:
             raise NotImplementedError
 
     def _sample_features(self, num_features):
+        # get number of sampled features
         num_sampled_features = math.ceil(num_features * self._max_feature_ratio)
         sampled_features = np.random.choice(list(range(num_features)), size=num_sampled_features, replace=False)
         return np.sort(sampled_features)
@@ -65,7 +67,7 @@ class CART:
         # randomly sample features
         sampled_features = self._sample_features(num_features=data.shape[1])
         # find best feature to split on by impurity
-        for feature, i in enumerate(sampled_features):
+        for i, feature in enumerate(sampled_features):
             feature_values = data[:, feature]
             feature_threshold, feature_impurity = find_best_split_for_feature(
                 feature_values, labels, self._n_classes, self._impurity_function)
@@ -111,12 +113,16 @@ class CART:
             self._find_optimum_split(data, labels)
             # split data and creates left and right child nodes
             mask = data[:, self._feature_index] <= self._feature_threshold
-            # create and fit left child node
-            self._left_child = self._create_child()
-            self._left_child.fit(data[mask, :], labels[mask])
-            # create and fit right child node
-            self._right_child = self._create_child()
-            self._right_child.fit(data[~mask, :], labels[~mask])
+            # checks the split actually partitions data, otherwise make leaf
+            if np.min(mask) == np.max(mask):
+                self._create_leaf(labels)
+            else:
+                # create and fit left child node
+                self._left_child = self._create_child()
+                self._left_child.fit(data[mask, :], labels[mask])
+                # create and fit right child node
+                self._right_child = self._create_child()
+                self._right_child.fit(data[~mask, :], labels[~mask])
         else:
             self._create_leaf(labels)
 
