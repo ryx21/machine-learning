@@ -18,8 +18,14 @@ if __name__ == "__main__":
     X_train, X_test = X[:split], X[split:]
     y_train, y_test = y[:split], y[split:]
 
-    RF_model = RandomForestClassifier(n_classes=n_classes, min_samples_leaf=10, max_depth=5, num_trees=200, max_sample_ratio=0.8)
-    RF_model.fit(X_train, y_train)
+    RF_model = RandomForestClassifier(
+        n_classes=n_classes,
+        min_samples_leaf=5,
+        max_depth=10,
+        num_trees=200,
+        max_sample_ratio=0.5
+    )
+    RF_model.fit(X_train, y_train, n_jobs=-1)
 
     y_train_predict = RF_model.predict(X_train)
     y_test_predict = RF_model.predict(X_test)

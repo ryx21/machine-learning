@@ -22,9 +22,18 @@ def test_sample_data():
     assert n_samples * 0.5 * 0.9 < len(sampled_labels) < n_samples * 0.5 * 1.1
 
 
-def test_fit():
+def test_fit_single_process():
     rf_test = get_trained_rf(n_samples=100, n_trees=42, n_features=4)
     assert len(rf_test._base_learner_ensemble) == 42
+
+
+def test_fit_multi_process():
+    n_trees = 42
+    test_data = np.random.normal(size=(100, 4))
+    test_labels = np.random.binomial(n=1, p=0.1, size=100)
+    rf_test = RandomForestClassifier(n_classes=4, num_trees=n_trees, max_depth=3, verbose=False)
+    rf_test._build_ensemble_multi_process(test_data, test_labels, n_jobs=-1)
+    assert len(rf_test._base_learner_ensemble) == n_trees
 
 
 def test_sample_predict_probability_sum_to_one():

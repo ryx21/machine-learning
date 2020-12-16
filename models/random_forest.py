@@ -1,6 +1,7 @@
 import numpy as np
 import math
 import time
+from pathos import multiprocessing
 from models.cart import CART
 
 # TODO: add multiprocessing fit() option
@@ -59,11 +60,16 @@ class RandomForestClassifier:
                 print(f'--- No. base learners trained: {i + 1} ---')
 
     def _build_ensemble_multi_process(self, data, labels, n_jobs):
-        raise NotImplementedError
+        # build random forest with multiprocessing
+        def single_job(i): return self._build_base_learner(data, labels)
+        if n_jobs == -1:
+            n_jobs = multiprocessing.cpu_count()
+        with multiprocessing.Pool(n_jobs) as p:
+            self._base_learner_ensemble = p.map(single_job, range(self._num_trees))
 
     def fit(self, data, labels, n_jobs=1):
         start_time = time.time()
-        if n_jobs > 1:
+        if n_jobs != 1:
             self._build_ensemble_multi_process(data, labels, n_jobs)
         else:
             self._build_ensemble_single_process(data, labels)
