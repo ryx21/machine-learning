@@ -3,6 +3,8 @@ import math
 import time
 from models.cart import CART
 
+# TODO: add multiprocessing fit() option
+
 
 class RandomForestClassifier:
 
