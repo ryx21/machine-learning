@@ -1,35 +1,17 @@
-# Algorithms
+# Machine-Learning
 
-My implementations of machine learning algorithms.
-* CART (Classification and Regression Tree) Algorithm
-* Random Forest classifier
+*What I cannot create, I do not understand - Richard Feynman*
+
+A repository for me to play around with implementing ML algorithms, and practice my software engineering skills.
 
 ### Project Setup
-1. Setup python path
+Create a virtual environment:
 ```
-export PYTHONPATH="${PYTHONPATH}:/path/to/project"
+conda create -n <env> python=3.8
+conda activate <env>
 ```
-2. Install dependencies
-```
-pip install -r requirements.txt
-```
-`models/` contains the algorithm implementations, `tests/` contain unit tests, and `demos` contain demo scripts for each algorithm.
-### Models
-#### CART Algorithm
-The CART implementation currently supports only categorical target variables and numerical features. 
-Optional parameters:
-* `max_depth`
-* `min_samples_split`
-* `max_feature_ratio`
 
-Supported splitting functions:
-* `gini`
-* `entropy`
-* `misclassification`
-
-#### Random Forest Classifier
-Builds an ensemble of CART classifiers with random feature selection and random sample selection. Optional Parameters (includes also CART parameters):
-* `num_trees`
-* `max_sample_ratio`
-
-Call `fit(data, labels, n_jobs)` function to fit model to train model. `n_jobs` can be used to set number of multiprocessing jobs, (`n_jobs = -1` uses all available cores). By default `n_jobs=1` which uses a single process.
+Install the package locally in editable mode:
+```
+pip install -e .
+```
