@@ -1,36 +1,22 @@
-from sklearn import datasets
+from demo_utils import get_iris_demo_splits
 import numpy as np
 from sklearn.metrics import accuracy_score
 from models.random_forest import RandomForestClassifier
 
-if __name__ == "__main__":
 
-    np.random.seed(0)
+X_train, y_train, X_test, y_test = get_iris_demo_splits()
 
-    iris = datasets.load_iris()
+RF_model = RandomForestClassifier(
+    min_samples_split=3,
+    max_depth=4,
+    num_trees=100,
+    max_sample_ratio=0.5,
+)
+RF_model.fit(X_train, y_train, n_jobs=-1)
 
-    X = iris.data
-    y = iris.target
-    n_samples = len(X)
-    n_classes = 3
+y_train_predict = RF_model.predict(X_train)
+y_test_predict = RF_model.predict(X_test)
 
-    split = int(0.7 * n_samples)
-    X_train, X_test = X[:split], X[split:]
-    y_train, y_test = y[:split], y[split:]
-
-    RF_model = RandomForestClassifier(
-        n_classes=n_classes,
-        min_samples_leaf=5,
-        max_depth=10,
-        num_trees=200,
-        max_sample_ratio=0.5,
-        split_criterion="gini"
-    )
-    RF_model.fit(X_train, y_train, n_jobs=-1)
-
-    y_train_predict = RF_model.predict(X_train)
-    y_test_predict = RF_model.predict(X_test)
-
-    print('--- Random Forest Classifier ---')
-    print("Train Accuracy:", accuracy_score(y_train, y_train_predict))
-    print("Test Accuracy:", accuracy_score(y_test, y_test_predict))
+print('--- Random Forest Classifier ---')
+print("Train Accuracy:", accuracy_score(y_train, y_train_predict))
+print("Test Accuracy:", accuracy_score(y_test, y_test_predict))
