@@ -1,147 +1,119 @@
 import numpy as np
-import math
-from models.helpers import find_best_split_for_feature, get_label_probabilities,\
-    gini_impurity, entropy_impurity, misclassification_impurity
+from typing import Callable
+from models.helpers import label_probabilities, entropy, mean_squared_error, optimal_feature_split, sample_fraction_of_idxs
 
-# TODO: implement min_samples_leaf
-# TODO: implement regression tree
-# TODO: write tests for alternate splitting functions
 
+REGRESSION = 'regression'
+CLASSIFICATION = 'classification'
 
 class CART:
 
-    def __init__(self,
-                 n_classes,
-                 depth=1,
-                 max_depth=np.infty,
-                 min_samples_leaf=1,
-                 min_samples_split=2,
-                 split_criterion="gini",
-                 max_feature_ratio=1,
-                 ):
-        self._n_classes = n_classes
-        self._depth = depth
+    def __init__(self,                 
+            max_depth: int=np.infty,
+            min_samples_split: int=2,
+            max_feature_ratio: float=1.0,
+            task: str=CLASSIFICATION,
+            custom_loss_function: Callable=None
+            ):
+        # node depth
+        self._depth = 1
         # set up parameters
         self._max_depth = max_depth
-        self._min_samples_leaf = min_samples_leaf
         self._min_samples_split = min_samples_split
-        self._split_criterion = split_criterion
         self._max_feature_ratio = max_feature_ratio
+        self._task = task
+        self._custom_loss_function = None
         # node information
-        self._leaf_class = None
-        self._is_leaf_node = False
+        self._leaf_value = None
         self._left_child = None
         self._right_child = None
-        self._feature_index = None
+        self._feature_idx = None
         self._feature_threshold = None
-        # assert all arguments are allowable
-        self._check_arguments()
-        # setup impurity function
-        self._impurity_function = self._get_impurity_function(split_criterion)
+        
+        if custom_loss_function:
+            self._loss_function = custom_loss_function
+        elif task == REGRESSION:
+            self._loss_function = mean_squared_error
+        elif task == CLASSIFICATION:
+            self._loss_function = entropy
+        else:
+            raise AttributeError("Loss function not specified")
 
-    def _check_arguments(self):
-        assert self._n_classes > 1, "'n_classes' must be greater than 1"
-        assert self._max_depth > 0, "'max_depth' must be greater than 0"
-        assert self._min_samples_leaf > 0, "'min_samples_leaf' must be greater than 0"
-        assert self._min_samples_split > 1, "'min_samples_split' must be greater than 1"
-        assert (1 >= self._max_feature_ratio > 0), "'max_feature_ratio' must be within [0, 1)"
-        assert self._split_criterion in ['gini', 'entropy', 'misclassification'],\
-            "'split_criterion' must be one of: gini, entropy, misclassification'"
+    def _split(self, data: np.ndarray, labels: np.array):
+        sampled_feature_idxs = sample_fraction_of_idxs(
+            data.shape[1], self._max_feature_ratio
+        )
+        best_loss = np.inf
+        for feature_idx in sampled_feature_idxs:
+            feature_values = data[:, feature_idx]
+            threshold, loss = optimal_feature_split(feature_values, labels, self._loss_function)
+            if loss < best_loss:
+                best_loss = loss
+                self._feature_idx = feature_idx
+                self._feature_threshold = threshold
 
-    @staticmethod
-    def _get_impurity_function(impurity_function):
-        if impurity_function == "gini":
-            return gini_impurity
-        elif impurity_function == "entropy":
-            return entropy_impurity
-        elif impurity_function == "misclassification":
-            return misclassification_impurity
-
-    def _sample_features(self, num_features):
-        # get number of sampled features
-        num_sampled_features = math.ceil(num_features * self._max_feature_ratio)
-        sampled_features = np.random.choice(list(range(num_features)), size=num_sampled_features, replace=False)
-        return np.sort(sampled_features)
-
-    def _find_optimum_split(self, data, labels):
-        # data (#samples, #features), labels (#samples)
-        # randomly sample features
-        sampled_features = self._sample_features(num_features=data.shape[1])
-        # find best feature to split on by impurity
-        for i, feature in enumerate(sampled_features):
-            feature_values = data[:, feature]
-            feature_threshold, feature_impurity = find_best_split_for_feature(
-                feature_values, labels, self._n_classes, self._impurity_function)
-            if i == 0:
-                best_feature_threshold = feature_threshold
-                best_feature_impurity = feature_impurity
-                best_feature_index = feature
-            elif feature_impurity < best_feature_impurity:
-                best_feature_threshold = feature_threshold
-                best_feature_impurity = feature_impurity
-                best_feature_index = feature
-        # update node with feature threshold and feature index
-        self._feature_threshold = best_feature_threshold
-        self._feature_index = best_feature_index
-
-    def _create_leaf(self, labels):
-        self._is_leaf_node = True
-        self._leaf_class = np.argmax(get_label_probabilities(labels, self._n_classes))
+    def _set_leaf_value(self, targets):
+        # TODO: ideally this should be tied to the loss function
+        if self._task == REGRESSION:
+            self._leaf_value = np.mean(targets)
+        elif self._task == CLASSIFICATION:
+            label_weights = label_probabilities(targets)
+            self._leaf_value = np.argmax(label_weights)
+        else:
+            raise AttributeError("Invalid classifier type")
 
     def _create_child(self):
         child_node = CART(
-            self._n_classes,
-            self._depth + 1,
             self._max_depth,
-            self._min_samples_leaf,
             self._min_samples_split,
-            self._split_criterion,
-            self._max_feature_ratio)
+            self._max_feature_ratio,
+            self._task,
+            self._custom_loss_function
+            )
+        child_node._depth = self._depth + 1
         return child_node
-
-    def _stop_condition(self, data, labels):
+        
+    def _stop_condition(self, data: np.ndarray, targets: np.array) -> bool:
         # check if fewer than required number of samples per leaf
         cond1 = len(data) < self._min_samples_split
         # check if leaf is pure
-        cond2 = np.min(labels) == np.max(labels)
+        cond2 = np.min(targets) == np.max(targets)
         # check if node depth is at max depth
         cond3 = self._depth == self._max_depth
         conditions = [cond1, cond2, cond3]
         return any(conditions)
 
-    def fit(self, data, labels):
-        if not self._stop_condition(data, labels):
-            self._find_optimum_split(data, labels)
-            # split data and creates left and right child nodes
-            mask = data[:, self._feature_index] <= self._feature_threshold
-            # checks the split actually partitions data, otherwise make leaf
-            if np.min(mask) == np.max(mask):
-                self._create_leaf(labels)
-            else:
-                # create and fit left child node
-                self._left_child = self._create_child()
-                self._left_child.fit(data[mask, :], labels[mask])
-                # create and fit right child node
-                self._right_child = self._create_child()
-                self._right_child.fit(data[~mask, :], labels[~mask])
+    def fit(self, data, targets):
+
+        if self._stop_condition(data, targets):
+            self._set_leaf_value(targets)
+            return
         else:
-            self._create_leaf(labels)
+            self._split(data, targets)
+            mask = data[:, self._feature_idx] <= self._feature_threshold
+
+        if min(mask) == max(mask):
+            self._set_leaf_value(targets)
+            return
+        else:
+            # create and fit left child node
+            self._left_child = self._create_child()
+            self._left_child.fit(data[mask, :], targets[mask])
+            # create and fit right child node
+            self._right_child = self._create_child()
+            self._right_child.fit(data[~mask, :], targets[~mask])
 
     def predict_sample(self, x):
         # recurse down tree until leaf node is hit
-        if self._is_leaf_node is False:
-            if x[self._feature_index] <= self._feature_threshold:
-                return self._left_child.predict_sample(x)
-            else:
-                return self._right_child.predict_sample(x)
-        # return leaf node prediction
+        if self._leaf_value is not None:
+            return self._leaf_value
+        elif x[self._feature_idx] <= self._feature_threshold:
+            return self._left_child.predict_sample(x)
         else:
-            return self._leaf_class
-
+            return self._right_child.predict_sample(x)
+            
     def predict(self, data):
         predictions = []
-        for i in range(len(data)):
-            prediction = self.predict_sample(data[i])
-            predictions.append(prediction)
-        result = np.array(predictions)
-        return result
+        for x in data:
+            predictions.append(self.predict_sample(x))
+        return np.array(predictions)
