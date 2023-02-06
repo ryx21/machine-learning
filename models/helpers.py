@@ -1,59 +1,59 @@
 import numpy as np
+import math
+from typing import Callable
 
 
-def get_label_probabilities(data_labels, n_classes):
-    label_counts = np.zeros(n_classes)
+def label_probabilities(data_labels: np.array):
+    label_counts = np.zeros(max(data_labels)+1)
     for label in data_labels:
         label_counts[label] += 1
     label_probabilities = label_counts / len(data_labels)
     return label_probabilities
 
 
-def gini_impurity(data_labels, n_classes):
-    label_probabilities = get_label_probabilities(data_labels, n_classes)
-    result = np.dot(label_probabilities, 1-label_probabilities)
-    return result
+def sample_fraction_of_idxs(n_max: int, fraction: int):
+    num_samples = math.ceil(n_max * fraction)
+    sampled_features = np.random.choice(
+        list(range(n_max)),
+        size=num_samples,
+        replace=False)
+    return np.sort(sampled_features)
 
 
-def entropy_impurity(data_labels, n_classes):
+def entropy(targets: np.array):
+    if not len(targets):
+        return 0
     eps = 1e-10
-    label_probabilities = get_label_probabilities(data_labels, n_classes)
+    probabilities = label_probabilities(targets)
     # ensure we don't take logs of 0s
-    label_probabilities[label_probabilities < eps] = eps
-    result = -np.dot(label_probabilities, np.log2(label_probabilities))
+    probabilities[probabilities < eps] = eps
+    result = -np.dot(probabilities, np.log2(probabilities))
     return result
 
 
-def misclassification_impurity(data_labels, n_classes):
-    label_probabilities = get_label_probabilities(data_labels, n_classes)
-    result = 1 - np.max(label_probabilities, axis=-1)
-    return result
+def mean_squared_error(targets: np.array):
+    if not len(targets):
+        return 0
+    return  (np.sum(targets) - np.mean(targets))**2 / len(targets)
 
 
-def get_split_impurity(left_labels, right_labels, n_classes, impurity_function):
-    sample_size = len(left_labels) + len(right_labels)
-    left_split_impurity = impurity_function(left_labels, n_classes)
-    right_split_impurity = impurity_function(right_labels, n_classes)
-    result = len(left_labels)/sample_size * left_split_impurity + len(right_labels)/sample_size* right_split_impurity
-    return result
+def weighted_split_loss(left_targets: np.array, right_targets: np.array, loss_function: Callable) -> float:
+    n = len(left_targets) + len(right_targets)
+    weighted_left_split_loss = len(left_targets) / n * loss_function(left_targets)
+    weighted_right_split_loss = len(right_targets) / n * loss_function(right_targets)
+    return weighted_left_split_loss + weighted_right_split_loss
 
 
-def find_best_split_for_feature(feature_values, labels, n_classes, impurity_function=gini_impurity):
+def optimal_feature_split(feature_values: np.array, targets: np.array, loss_function: Callable):
     # sort labels by feature_values
     sort_indices = np.argsort(feature_values)
     sorted_feature_values = feature_values[sort_indices]
-    sorted_labels = labels[sort_indices]
-    # find optimum threshold that minimises impurity function
+    sorted_targets = targets[sort_indices]
+    best_loss = np.inf
+    # find optimum threshold that minimises loss function
     for i in range(len(sorted_feature_values) - 1):
-        split_impurity = get_split_impurity(
-                sorted_labels[:i+1],
-                sorted_labels[i+1:],
-                n_classes,
-                impurity_function)
-        if i == 0:
-            best_impurity = split_impurity
+        loss = weighted_split_loss(sorted_targets[:i+1], sorted_targets[i+1:], loss_function)
+        if loss < best_loss:
+            best_loss = loss
             best_threshold = sorted_feature_values[i]
-        elif split_impurity < best_impurity:
-            best_impurity = split_impurity
-            best_threshold = sorted_feature_values[i]
-    return best_threshold, best_impurity
+    return best_threshold, best_loss
